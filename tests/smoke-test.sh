@@ -24,11 +24,28 @@ PY
 
 echo "[3/7] Validate full normalized RTM catalog"
 python3 - <<'PY'
-import base64,gzip,re
+import base64,gzip,zlib,bz2,lzma,re
 from pathlib import Path
 b64=''.join(Path('data/requirements-catalog.b64').read_text().split())
 b64 += '=' * ((4-len(b64)%4)%4)
-md=gzip.decompress(base64.b64decode(b64)).decode('utf-8')
+raw=base64.b64decode(b64)
+methods=[
+  ('gzip',lambda b:gzip.decompress(b)),
+  ('deflate',lambda b:zlib.decompress(b)),
+  ('deflate-raw',lambda b:zlib.decompress(b,-15)),
+  ('bz2',lambda b:bz2.decompress(b)),
+  ('lzma',lambda b:lzma.decompress(b)),
+]
+md=None;used=None
+for name,fn in methods:
+    try:
+        candidate=fn(raw).decode('utf-8')
+        if '# KSP Requirements Catalog' in candidate:
+            md=candidate;used=name;break
+    except Exception:
+        pass
+assert md is not None, 'catalog compression is not gzip/deflate/raw-deflate/bz2/lzma or content is invalid'
+print('catalog compression:',used)
 blocks=re.split(r'\n---\s*\n',md)
 rows={}
 for block in blocks:
@@ -61,6 +78,7 @@ assert 'SSO' in r['rules']
 assert r['sub']=='Access'
 assert r['origin']=='Existing Function'
 assert 'RTM row 2' in r['source']
+assert used in ('gzip','deflate','deflate-raw'), 'browser cannot decode catalog compression: '+used
 print('Full RTM catalog OK:',len(rows),'requirements with usable details')
 PY
 
@@ -82,7 +100,7 @@ trap 'kill $SERVER_PID 2>/dev/null || true' EXIT
 sleep 1
 python3 - <<'PY'
 from urllib.request import urlopen
-import json,base64,gzip
+import json
 base='http://127.0.0.1:8765/'
 paths=['','index.html','styles.css','app.js','stability-hotfix.js','full-details-hotfix.js','data/requirements.json','data/requirements-catalog.b64']
 for path in paths:
@@ -91,14 +109,6 @@ for path in paths:
 with urlopen(base+'data/requirements.json', timeout=5) as r:
     data=json.load(r)
 assert len(data)==112
-with urlopen(base+'data/requirements-catalog.b64', timeout=5) as r:
-    b64=''.join(r.read().decode().split())
-b64 += '=' * ((4-len(b64)%4)%4)
-md=gzip.decompress(base64.b64decode(b64)).decode('utf-8')
-assert '#### EPIC1_1 — Access Spreading Portal' in md
-assert '**User story**' in md
-assert '**Pre-condition**' in md
-assert '**Narrative / source business rules**' in md
 print('Local HTTP smoke test OK')
 PY
 
@@ -106,6 +116,6 @@ echo "[7/7] Verify detail loader contains fail-closed validation"
 grep -q "parsed.size !== 112" full-details-hotfix.js
 grep -q "Incomplete normalized detail" full-details-hotfix.js
 grep -q "requirementDetails.clear" full-details-hotfix.js
-grep -q "repeat((4 - (b64.length % 4)) % 4)" full-details-hotfix.js
+grep -q "deflate-raw" full-details-hotfix.js
 
 echo "All blocking smoke tests passed."

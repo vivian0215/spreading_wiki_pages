@@ -86,7 +86,8 @@
     if (!response.ok) throw new Error('requirements-catalog.b64 HTTP ' + response.status);
     if (!('DecompressionStream' in window)) throw new Error('Browser does not support gzip decompression.');
 
-    const b64 = (await response.text()).trim();
+    let b64 = (await response.text()).trim().replace(/\s+/g, '');
+    b64 += '='.repeat((4 - (b64.length % 4)) % 4);
     const bytes = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
     const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));
     const md = await new Response(stream).text();

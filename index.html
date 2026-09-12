@@ -1,30 +1,61 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>KSP Spreading Wiki</title>
-  <link rel="stylesheet" href="styles.css" />
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>KSP Second Brain</title>
+  <meta name="description" content="KSP / Automated Financial Statement Spreading project knowledge portal">
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <div class="shell">
-    <aside class="sidebar">
-      <div class="brand">KSP Second Brain</div>
-      <div class="sub">Public sanitized view</div>
-      <nav id="nav"></nav>
-      <div class="notice">This site intentionally omits confidential project data.</div>
-    </aside>
-    <main class="main">
-      <header class="topbar">
-        <div>
-          <h1 id="page-title">Project Dashboard</h1>
-          <p id="page-subtitle">High-level project knowledge suitable for public display.</p>
-        </div>
-        <input id="search" type="search" placeholder="Search this public wiki…" />
-      </header>
-      <section id="content"></section>
-    </main>
-  </div>
+  <header class="topbar">
+    <div><div class="eyebrow">KSP / Automated Spreading</div><h1>Project Second Brain</h1></div>
+    <div class="badge">Draft Knowledge Baseline</div>
+  </header>
+  <nav class="tabs">
+    <button class="tab active" data-view="dashboard">Dashboard</button>
+    <button class="tab" data-view="overview">Project Overview</button>
+    <button class="tab" data-view="process">As-Is / To-Be</button>
+    <button class="tab" data-view="requirements">Requirements Explorer</button>
+    <button class="tab" data-view="ai">AI Capabilities</button>
+    <button class="tab" data-view="issues">Open Questions</button>
+    <button class="tab" data-view="quality">BRD Quality Gates</button>
+  </nav>
+  <main>
+    <section id="dashboard" class="view active">
+      <div class="notice"><strong>Important:</strong> This is a read-only generated view. Draft remains Draft and conflicts are not silently resolved.</div>
+      <div id="stats" class="stats"></div>
+      <div class="grid two">
+        <section class="panel"><h2>Requirement distribution by Epic</h2><div id="epicSummary"></div></section>
+        <section class="panel"><h2>Priority profile</h2><div id="prioritySummary"></div></section>
+      </div>
+      <div class="grid two">
+        <section class="panel"><h2>Current baseline</h2><ul><li>112 populated RTM rows across 9 epics.</li><li>Current normalized RTM inventory is Draft.</li><li>BRD says 70 user stories while the current RTM has 112 rows; this remains an unresolved baseline conflict.</li><li>BRD quality-gate workbook contains 10 package-level criteria.</li></ul></section>
+        <section class="panel"><h2>Knowledge model</h2><p>Source evidence → normalized knowledge → requirements / business rules → acceptance criteria → traceability → future JIRA / testing / tools.</p><p class="muted">This website is a consumption layer; the private repository remains the working source of truth.</p></section>
+      </div>
+    </section>
+
+    <section id="overview" class="view"><div id="overviewContent"></div></section>
+    <section id="process" class="view"><div id="processContent"></div></section>
+
+    <section id="requirements" class="view">
+      <div class="toolbar">
+        <input id="reqSearch" type="search" placeholder="Search requirement ID or summary...">
+        <select id="epicFilter"><option value="">All epics</option></select>
+        <select id="priorityFilter"><option value="">All priorities</option></select>
+      </div>
+      <div id="resultCount" class="muted"></div>
+      <div class="requirements-layout">
+        <div id="requirementsList" class="requirement-list"></div>
+        <article id="requirementDetail" class="detail panel"><h2>Select a requirement</h2><p>Choose an item from the list to inspect its metadata and source trace.</p></article>
+      </div>
+    </section>
+
+    <section id="ai" class="view"><div id="aiContent"></div></section>
+    <section id="issues" class="view"><div id="issuesContent"></div></section>
+    <section id="quality" class="view"><div class="panel"><h2>BRD Acceptance / Quality Gates</h2><p>These are package-level acceptance/quality criteria for the BRD and requirement set, not story-level acceptance criteria.</p><div id="qualityList"></div></div></section>
+  </main>
+  <footer>Generated knowledge view • KSP Second Brain</footer>
   <script src="app.js"></script>
 </body>
 </html>

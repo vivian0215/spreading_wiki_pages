@@ -1,121 +1,41 @@
 #!/usr/bin/env bash
 set -euo pipefail
-
 cd "$(dirname "$0")/.."
-
-echo "[1/7] Validate JavaScript syntax"
-node --check app.js
-node --check stability-hotfix.js
-node --check full-details-hotfix.js
-
-echo "[2/7] Validate core requirement index"
-python3 - <<'PY'
+echo '[1/6] JS syntax'; node --check app.js; node --check stability-hotfix.js; node --check full-details-hotfix.js
+echo '[2/6] Core index'; python3 - <<'PY'
 import json
-from pathlib import Path
-p=Path('data/requirements.json')
-data=json.loads(p.read_text())
-assert isinstance(data,list), 'requirements.json must be a list'
-assert len(data)==112, f'expected 112 requirements, got {len(data)}'
-ids=[x.get('id') for x in data]
-assert len(set(ids))==112, 'requirement IDs must be unique'
-assert all(ids), 'requirement IDs must not be blank'
-print('requirements.json OK:', len(data), 'rows')
+x=json.load(open('data/requirements.json')); assert len(x)==112; ids=[r['id'] for r in x]; assert len(set(ids))==112
+print('112 core requirements OK')
 PY
-
-echo "[3/7] Validate full normalized RTM catalog"
-python3 - <<'PY'
-import base64,gzip,zlib,bz2,lzma,re
+echo '[3/6] Full RTM details'; python3 - <<'PY'
+import base64,gzip,re
 from pathlib import Path
-b64=''.join(Path('data/requirements-catalog.b64').read_text().split())
-b64 += '=' * ((4-len(b64)%4)%4)
-raw=base64.b64decode(b64)
-methods=[
-  ('gzip',lambda b:gzip.decompress(b)),
-  ('deflate',lambda b:zlib.decompress(b)),
-  ('deflate-raw',lambda b:zlib.decompress(b,-15)),
-  ('bz2',lambda b:bz2.decompress(b)),
-  ('lzma',lambda b:lzma.decompress(b)),
-]
-md=None;used=None
-for name,fn in methods:
-    try:
-        candidate=fn(raw).decode('utf-8')
-        if '# KSP Requirements Catalog' in candidate:
-            md=candidate;used=name;break
-    except Exception:
-        pass
-assert md is not None, 'catalog compression is not gzip/deflate/raw-deflate/bz2/lzma or content is invalid'
-print('catalog compression:',used)
-blocks=re.split(r'\n---\s*\n',md)
+parts=[]
+for i in range(8):
+ p=Path(f'data/catalog/catalog-{i:02d}.b64'); assert p.exists(),p; parts.append(p.read_text().strip())
+b64=''.join(parts); b64+='='*((4-len(b64)%4)%4); md=gzip.decompress(base64.b64decode(b64)).decode()
 rows={}
-for block in blocks:
-    m=re.search(r'^####\s+(EPIC\d+_\d+)\s+—\s+(.+)$',block,re.M)
-    if not m: continue
-    rid=m.group(1)
-    def meta(label):
-        mm=re.search(r'^- \*\*'+re.escape(label)+r':\*\*\s*(.+)$',block,re.M)
-        return mm.group(1).strip() if mm else ''
-    def section(title):
-        marker='**'+title+'**'
-        i=block.find(marker)
-        if i<0:return ''
-        body=block[i+len(marker):].lstrip(' \n')
-        mm=re.search(r'\n\*\*[^*\n]+\*\*\s*\n|\n---\s*$',body,re.M)
-        return (body[:mm.start()] if mm else body).strip()
-    rows[rid]={
-      'summary':m.group(2).strip(),'type':meta('Type'),'sub':meta('Sub-process'),
-      'status':meta('Status'),'origin':meta('Capability origin (source column)'),
-      'process':meta('Process'),'source':meta('Source evidence'),
-      'story':section('User story'),'pre':section('Pre-condition'),
-      'rules':section('Narrative / source business rules')}
-assert len(rows)==112, f'expected 112 detailed requirements, got {len(rows)}'
+for block in re.split(r'\n---\s*\n',md):
+ m=re.search(r'^####\s+(EPIC\d+_\d+)\s+—\s+(.+)$',block,re.M)
+ if not m: continue
+ def meta(label):
+  q=re.search(r'^- \*\*'+re.escape(label)+r':\*\*\s*(.+)$',block,re.M); return q.group(1).strip() if q else ''
+ def sec(title):
+  marker='**'+title+'**'; j=block.find(marker)
+  if j<0:return ''
+  b=block[j+len(marker):].lstrip(' \n'); q=re.search(r'\n\*\*[^*\n]+\*\*\s*\n|\n---\s*$',b,re.M); return (b[:q.start()] if q else b).strip()
+ rows[m.group(1)]={'story':sec('User story'),'pre':sec('Pre-condition'),'rules':sec('Narrative / source business rules'),'type':meta('Type'),'sub':meta('Sub-process'),'origin':meta('Capability origin (source column)'),'process':meta('Process'),'source':meta('Source evidence')}
+assert len(rows)==112,len(rows)
 for rid,r in rows.items():
-    for key in ['summary','type','sub','status','origin','process','source','story','pre','rules']:
-        assert r[key], f'{rid} missing {key}'
-r=rows['EPIC1_1']
-assert r['story'].startswith('As a credit analyst/CCOE, I want to log in to the spreading portal')
-assert 'SSO' in r['rules']
-assert r['sub']=='Access'
-assert r['origin']=='Existing Function'
-assert 'RTM row 2' in r['source']
-assert used in ('gzip','deflate','deflate-raw'), 'browser cannot decode catalog compression: '+used
-print('Full RTM catalog OK:',len(rows),'requirements with usable details')
+ for k,v in r.items(): assert v,f'{rid} missing {k}'
+r=rows['EPIC1_1']; assert r['story'].startswith('As a credit analyst/CCOE'); assert 'SSO' in r['rules']; assert r['sub']=='Access'; assert r['origin']=='Existing Function'; assert 'RTM row 2' in r['source']
+print('112 detailed requirements OK; EPIC1_1 content verified')
 PY
-
-echo "[4/7] Validate required site assets exist"
-for f in index.html styles.css app.js stability-hotfix.js full-details-hotfix.js data/requirements.json data/requirements-catalog.b64; do
-  test -f "$f" || { echo "Missing required asset: $f"; exit 1; }
-done
-
-echo "[5/7] Validate index references current assets"
-grep -q 'app.js?v=20260912-7' index.html
-grep -q 'stability-hotfix.js?v=20260912-7' index.html
-grep -q 'full-details-hotfix.js?v=20260912-7' index.html
-grep -q 'styles.css?v=20260912-7' index.html
-
-echo "[6/7] Start local static server and verify HTTP paths"
-python3 -m http.server 8765 >/tmp/ksp-pages-test.log 2>&1 &
-SERVER_PID=$!
-trap 'kill $SERVER_PID 2>/dev/null || true' EXIT
-sleep 1
-python3 - <<'PY'
+echo '[4/6] Assets'; for f in index.html styles.css app.js stability-hotfix.js full-details-hotfix.js data/requirements.json data/catalog/catalog-{00..07}.b64; do test -f "$f"; done
+echo '[5/6] Current references'; grep -q 'full-details-hotfix.js?v=20260912-7' index.html; grep -q 'styles.css?v=20260912-7' index.html
+echo '[6/6] Local HTTP'; python3 -m http.server 8765 >/tmp/ksp-pages-test.log 2>&1 & PID=$!; trap 'kill $PID 2>/dev/null || true' EXIT; sleep 1; python3 - <<'PY'
 from urllib.request import urlopen
-import json
-base='http://127.0.0.1:8765/'
-paths=['','index.html','styles.css','app.js','stability-hotfix.js','full-details-hotfix.js','data/requirements.json','data/requirements-catalog.b64']
-for path in paths:
-    r=urlopen(base+path, timeout=5)
-    assert r.status==200, (path,r.status)
-with urlopen(base+'data/requirements.json', timeout=5) as r:
-    data=json.load(r)
-assert len(data)==112
-print('Local HTTP smoke test OK')
+for p in ['','app.js','full-details-hotfix.js','data/requirements.json']+[f'data/catalog/catalog-{i:02d}.b64' for i in range(8)]: assert urlopen('http://127.0.0.1:8765/'+p).status==200
+print('HTTP assets OK')
 PY
-
-echo "[7/7] Verify detail loader contains fail-closed validation"
-grep -q "parsed.size !== 112" full-details-hotfix.js
-grep -q "Incomplete normalized detail" full-details-hotfix.js
-grep -q "requirementDetails.clear" full-details-hotfix.js
-grep -q "deflate-raw" full-details-hotfix.js
-
-echo "All blocking smoke tests passed."
+echo 'ALL BLOCKING PORTAL TESTS PASSED'

@@ -1,81 +1,27 @@
-const sections = [
-  { id: 'dashboard', label: 'Dashboard' },
-  { id: 'overview', label: 'Project Overview' },
-  { id: 'knowledge', label: 'Knowledge Areas' },
-  { id: 'governance', label: 'Publishing Rules' }
-];
-
-const publicData = {
-  overview: 'This is the public presentation layer for a private project knowledge repository. Detailed project information remains private unless it is explicitly reviewed and approved for public release.',
-  areas: [
-    ['Project context', 'High-level, non-confidential project orientation.'],
-    ['Process knowledge', 'Sanitized process concepts suitable for public presentation.'],
-    ['Requirements', 'Only explicitly approved public requirement summaries.'],
-    ['AI knowledge', 'General AI capability themes without internal implementation details.'],
-    ['Traceability', 'Public-safe references only; no private source paths or customer data.'],
-    ['Delivery', 'Public-safe demonstrations and documentation.']
-  ],
-  rules: [
-    'Do not publish customer, CIF, employee, audit-log or personal data.',
-    'Do not publish credentials, secrets, internal endpoints or private API specifications.',
-    'Do not publish raw source files or private SharePoint paths.',
-    'Do not copy detailed internal requirements unless they have been explicitly approved for public release.',
-    'Treat the private repository as the authoritative project second brain.'
-  ]
+let requirements=[];let selectedId=null;
+const qualityGates=[['AC-01','Objectives & scope are stated and bounded.'],['AC-02','Every functional area is covered by requirements.'],['AC-03','Non-functional, data & compliance items are captured.'],['AC-04','Responsible AI needs & guardrail are captured.'],['AC-05','Requirements are well-formed.'],['AC-06','Every requirement is prioritised.'],['AC-07','Requirements are traceable and the BRD matches RTM.'],['AC-08','Risks, assumptions, constraints & dependencies are explicit.'],['AC-09','The document is readable and consistent.'],['AC-10','The BRD is versioned, reviewed and signed off.']];
+const project={
+ definition:'KSP is an AI-assisted financial spreading initiative intended to let users submit borrower financial statements once, read and translate the content when required, map the information to one or more bank financial templates according to spreading guidelines and industry context, perform automated quality checks, allow human review/correction/approval, and deliver the approved spread to downstream systems with full traceability.',
+ problem:'The current spreading process contains significant manual work and relies on QUIQSpread for part of the flow. Documented limitations include format/language constraints, incomplete support for required templates, manual preparation/review effort, inconsistent mapping risk, and downstream re-entry/reconciliation effort.',
+ principles:['Single entry — submit once and reuse across templates and target systems.','Human-in-the-loop — AI proposes and checks; an analyst remains the final decision-maker.','Guideline-based spreading — mapping follows bank spreading rules and industry context.','No invention — every spread value must be grounded in source evidence.','Bilingual support — Thai, English, and mixed-language financial statements.','Independent QA — quality checking is distinct from initial spreading/mapping.','Versioned and auditable — inputs, corrections, versions and outputs are traceable.','Governed learning — analyst corrections may support improvement only under governance.'],
+ scope:['PDF, Excel and scanned statement ingestion','Thai / English / mixed-language understanding','Translation where required','Mapping to MMAS / KTBBANK / SFA concepts','Industry-adapted spreading rules','Automated QA and reconciliation','Analyst review, correction, override and approval','Downstream delivery / integration','Versioning, audit trail and reporting'],
+ out:['Credit decisioning, scoring or rating','Full legal/contractual translation beyond financial statement content','Replacing downstream credit/core systems','Auditing/opining on borrower statement accuracy','Approval or downstream delivery without analyst sign-off']
 };
-
-const nav = document.getElementById('nav');
-const content = document.getElementById('content');
-const title = document.getElementById('page-title');
-const subtitle = document.getElementById('page-subtitle');
-const search = document.getElementById('search');
-
-function escapeHtml(s=''){return s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));}
-
-function renderNav(active='dashboard') {
-  nav.innerHTML = sections.map(s => `<button data-id="${s.id}" class="${s.id===active?'active':''}">${s.label}</button>`).join('');
-  nav.querySelectorAll('button').forEach(b => b.onclick = () => render(b.dataset.id));
-}
-
-function render(id='dashboard') {
-  renderNav(id);
-  search.value='';
-  if (id==='dashboard') {
-    title.textContent='KSP Second Brain — Public View';
-    subtitle.textContent='A sanitized online interface backed by a separate private knowledge repository.';
-    content.innerHTML=`
-      <div class="cards">
-        <div class="card"><div class="value">Private</div><div class="label">Authoritative knowledge repo</div></div>
-        <div class="card"><div class="value">Public</div><div class="label">This presentation layer</div></div>
-        <div class="card"><div class="value">Read-only</div><div class="label">Current web experience</div></div>
-        <div class="card"><div class="value">Reviewed</div><div class="label">Content required before publishing</div></div>
-      </div>
-      <div class="panel"><h2>Purpose</h2><p>${publicData.overview}</p></div>
-      <div class="panel"><h2>Knowledge areas</h2><div class="grid">${publicData.areas.map(a=>`<div class="item"><h3>${a[0]}</h3><p>${a[1]}</p></div>`).join('')}</div></div>`;
-  } else if (id==='overview') {
-    title.textContent='Project Overview';
-    subtitle.textContent='Public-safe orientation only.';
-    content.innerHTML=`<div class="panel"><h2>Overview</h2><p>${publicData.overview}</p><p>Detailed project scope, internal requirements and source evidence are intentionally retained in the private repository.</p></div>`;
-  } else if (id==='knowledge') {
-    title.textContent='Knowledge Areas';
-    subtitle.textContent='How the future public-safe portal can be organized.';
-    content.innerHTML=`<div class="grid">${publicData.areas.map(a=>`<div class="panel"><h2>${a[0]}</h2><p>${a[1]}</p></div>`).join('')}</div>`;
-  } else {
-    title.textContent='Publishing Rules';
-    subtitle.textContent='Security boundary between the private second brain and this public site.';
-    content.innerHTML=`<div class="panel"><h2>Rules</h2>${publicData.rules.map(r=>`<div class="item"><p>${r}</p></div>`).join('')}</div>`;
-  }
-}
-
-search.addEventListener('input', e => {
-  const q=e.target.value.trim().toLowerCase();
-  if(!q){render('dashboard');return;}
-  renderNav('');
-  title.textContent='Search';
-  subtitle.textContent='Searches only content that is already approved for this public site.';
-  const rows=[...publicData.areas.map(a=>({title:a[0],text:a[1]})),...publicData.rules.map(r=>({title:'Publishing rule',text:r}))]
-    .filter(x=>(x.title+' '+x.text).toLowerCase().includes(q));
-  content.innerHTML=`<div class="panel search-results">${rows.length?rows.map(x=>`<div class="item"><h3>${escapeHtml(x.title)}</h3><p>${escapeHtml(x.text)}</p></div>`).join(''):'<div class="empty">No public content matched.</div>'}</div>`;
-});
-
-render();
+const process={asis:['Obtain financial statements from SET or clients','Prepare / compile and sometimes convert source files','Upload supported cases to QUIQSpread / existing automation','Moody’s QA reviews and adjusts based on guidelines','RM / analyst reviews and adjusts','Finalized spread is imported to CreditLens','SFA coverage remains partial/manual in existing flows'],limitations:['Incomplete support for KTBBANK use cases','Thai statements are not fully supported in the current automated path','Existing automated input has constrained file expectations','Preparation / RPA output can require manual correction','SFA mapping is incomplete/manual','Downstream reconciliation is required'],tobe:['Obtain statements from SET and/or client-provided sources','Ingest supported PDF, Excel and scanned-image inputs','Read Thai and English content','Produce applicable MMAS / KTBBANK / SFA spreads','Apply spreading guidelines and rounding / normalization rules','Run independent automated QA / LLM-as-Judge style checks','Analyst reviews exceptions and proposed adjustments','Analyst approves / finalizes the spread','Deliver approved results to CreditLens and SFA','Perform reconciliation / interlock control']};
+const ai=[['Document understanding',['Accept PDF, Excel and scanned statements','Detect Thai, English or mixed-language content','Read statement structure and context, not labels alone','Preserve source text for traceability']],['Translation',['Translate Thai financial-statement content where required','Treat English as first-class input','Preserve source-language evidence']],['Financial mapping & spreading',['Map source accounts to target-template fields','Support multiple templates from one ingestion','Apply guideline, sign, aggregation/split and calculation rules','Adapt treatment based on industry/context','Never invent a figure not grounded in source evidence']],['Automated QA',['Run validation separately from initial mapping','Check arithmetic, reconciliation and guideline conformance','Perform benchmark/reasonableness checks where approved','Explain findings and surface uncertainty']],['Confidence & exceptions',['Expose confidence where required','Escalate low-confidence or unmapped items','Allow human review and correction']],['Versioning & reproducibility',['Retain processing/correction/reprocessing versions','Stamp model, guideline and template versions','Preserve lineage sufficient to explain outputs']],['Governed learning',['Capture analyst corrections and rationale','Do not automatically treat every correction as training truth','Curate/approve feedback before model/rule improvement']],['Responsible AI controls',['Every output value must be source-grounded','Adjustments require justification and/or guideline reference where specified','Independent QA before human review','Uploaded document content is treated as source data, not trusted instructions','Human approval remains mandatory']]];
+const issues=[['CONFLICT-001','BRD story count vs current RTM','BRD says 70 user stories across 9 epics while the current RTM has 112 populated rows. Which artifact/version is the current requirement baseline?'],['OQ-001','Source-of-truth precedence','Several requirement artifacts coexist: WIP BRD, WIP RTM, earlier/draft RTMs, separate acceptance criteria, and reference user stories. What precedence should apply when wording differs?'],['OQ-002','Approval semantics','What statuses are formally used by KSP for requirement approval and baseline management?'],['OQ-003','Template scope and ownership','Which templates are mandatory for the first release, who owns each authoritative template definition, and how are template versions governed?'],['OQ-004','Industry-rule authority','Which industry classification is authoritative for spreading behavior, how are overrides handled, and who owns industry-specific spreading rules?'],['OQ-005','Data privacy and GitHub retention','What data-classification and retention rules apply to the knowledge repository?'],['OQ-006','Quantitative AI quality thresholds','What metrics and thresholds govern extraction/mapping accuracy, override rate, confidence and QA effectiveness?'],['OQ-007','Downstream interface contract','What are the approved payloads, error/retry behavior, reconciliation rules and ownership for each integration?'],['OQ-008','Reuse of reference user stories','External/reference stories are contextual evidence only unless an explicit KSP requirement or dependency links to them.']];
+const $=s=>document.querySelector(s);const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#039;'}[c]));
+function countBy(key){return requirements.reduce((m,r)=>{const k=r[key]||'Unknown';m[k]=(m[k]||0)+1;return m},{})}
+function barList(c){const max=Math.max(...Object.values(c),1);return Object.entries(c).map(([k,v])=>`<div class="bar-row"><div>${esc(k)}</div><div class="bar"><span style="width:${v/max*100}%"></span></div><strong>${v}</strong></div>`).join('')}
+function renderDashboard(){const stats=[['Requirements',requirements.length],['Epics',new Set(requirements.map(r=>r.epic)).size],['High Priority',requirements.filter(r=>r.priority==='1-High').length],['Medium Priority',requirements.filter(r=>r.priority==='2-Medium').length],['BRD Quality Gates',qualityGates.length]];$('#stats').innerHTML=stats.map(([l,v])=>`<div class="stat"><div class="value">${v}</div><div class="label">${l}</div></div>`).join('');$('#epicSummary').innerHTML=barList(countBy('epic'));$('#prioritySummary').innerHTML=barList(countBy('priority'))}
+function renderOverview(){$('#overviewContent').innerHTML=`<div class="panel prose"><h2>Working definition</h2><p>${project.definition}</p><h2>Business problem</h2><p>${project.problem}</p><h2>Target principles</h2><ul>${project.principles.map(x=>`<li>${esc(x)}</li>`).join('')}</ul><div class="grid two"><div><h2>In scope</h2><ul>${project.scope.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div><div><h2>Out of scope</h2><ul>${project.out.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div></div></div>`}
+function renderProcess(){const flow=process.tobe.map((x,i)=>`<span>${i+1}. ${esc(x)}</span>${i<process.tobe.length-1?'<b>→</b>':''}`).join('');$('#processContent').innerHTML=`<div class="grid two"><div class="panel prose"><h2>As-Is</h2><ol>${process.asis.map(x=>`<li>${esc(x)}</li>`).join('')}</ol><h3>Key limitations</h3><ul>${process.limitations.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div><div class="panel prose"><h2>To-Be</h2><ol>${process.tobe.map(x=>`<li>${esc(x)}</li>`).join('')}</ol></div></div><div class="panel"><h2>End-to-end target flow</h2><div class="flow">${flow}</div><p class="muted">Human review and approval remain mandatory. The target design requires lineage from source statement to final output, including versions, corrections, approvals and delivery outcomes.</p></div>`}
+function renderAI(){$('#aiContent').innerHTML=`<div class="grid two">${ai.map(([h,items])=>`<div class="panel"><h2>${esc(h)}</h2><ul>${items.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>`).join('')}</div>`}
+function renderIssues(){$('#issuesContent').innerHTML=`<div class="panel"><h2>Conflicts, gaps and open questions</h2>${issues.map(([id,h,t])=>`<div class="issue"><div class="chips"><span class="chip">${esc(id)}</span><span class="chip">Open</span></div><h3>${esc(h)}</h3><p>${esc(t)}</p></div>`).join('')}</div>`}
+function initFilters(){[...new Set(requirements.map(r=>r.epic))].forEach(v=>$('#epicFilter').insertAdjacentHTML('beforeend',`<option>${esc(v)}</option>`));[...new Set(requirements.map(r=>r.priority))].forEach(v=>$('#priorityFilter').insertAdjacentHTML('beforeend',`<option>${esc(v)}</option>`));['reqSearch','epicFilter','priorityFilter'].forEach(id=>$('#'+id).addEventListener('input',renderRequirements))}
+function filtered(){const q=$('#reqSearch').value.trim().toLowerCase(),e=$('#epicFilter').value,p=$('#priorityFilter').value;return requirements.filter(r=>(!e||r.epic===e)&&(!p||r.priority===p)&&(!q||[r.id,r.summary,r.epic].some(v=>String(v||'').toLowerCase().includes(q))))}
+function renderRequirements(){const list=filtered();$('#resultCount').textContent=`${list.length} of ${requirements.length} requirements`;$('#requirementsList').innerHTML=list.map(r=>`<div class="req-card ${r.id===selectedId?'active':''}" data-id="${esc(r.id)}"><div class="req-top"><span class="req-id">${esc(r.id)}</span><span class="chip">${esc(r.priority)}</span></div><div class="req-summary">${esc(r.summary)}</div><div class="chips"><span class="chip">${esc(r.epic)}</span></div></div>`).join('');document.querySelectorAll('.req-card').forEach(el=>el.addEventListener('click',()=>showRequirement(el.dataset.id)))}
+function showRequirement(id){selectedId=id;const r=requirements.find(x=>x.id===id);if(!r)return;$('#requirementDetail').innerHTML=`<div class="req-id">${esc(r.id)}</div><h2>${esc(r.summary)}</h2><div class="chips"><span class="chip">${esc(r.epic)}</span><span class="chip">${esc(r.priority)}</span><span class="chip">Draft</span></div><dl><dt>Source trace</dt><dd>Normalized from current WIP RTM, source row ${esc(r.source_row)}.</dd><dt>Current detail level</dt><dd>This explorer publishes the complete RTM inventory and requirement summaries. User-story wording, pre-conditions, narrative/business rules, process mapping and story-level acceptance criteria will be added as the next normalization layer.</dd><dt>Interpretation rule</dt><dd>Do not treat this draft requirement as approved unless approval evidence is added to the knowledge baseline.</dd></dl>`;renderRequirements()}
+function renderQuality(){$('#qualityList').innerHTML=qualityGates.map(([id,c])=>`<div class="quality-card"><h3>${id} — ${esc(c)}</h3><div class="chips"><span class="chip">Must</span><span class="chip">BRD package quality gate</span></div></div>`).join('')}
+document.querySelectorAll('.tab').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));btn.classList.add('active');document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));$('#'+btn.dataset.view).classList.add('active')}));
+fetch('data/requirements.json').then(r=>r.json()).then(data=>{requirements=data;initFilters();renderDashboard();renderOverview();renderProcess();renderAI();renderIssues();renderRequirements();renderQuality()}).catch(err=>{document.querySelector('main').innerHTML=`<div class="notice"><strong>Unable to load dashboard data.</strong><br>${esc(err.message)}</div>`});

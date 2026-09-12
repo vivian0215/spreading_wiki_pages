@@ -26,7 +26,8 @@ echo "[3/7] Validate full normalized RTM catalog"
 python3 - <<'PY'
 import base64,gzip,re
 from pathlib import Path
-b64=Path('data/requirements-catalog.b64').read_text().strip()
+b64=''.join(Path('data/requirements-catalog.b64').read_text().split())
+b64 += '=' * ((4-len(b64)%4)%4)
 md=gzip.decompress(base64.b64decode(b64)).decode('utf-8')
 blocks=re.split(r'\n---\s*\n',md)
 rows={}
@@ -91,9 +92,13 @@ with urlopen(base+'data/requirements.json', timeout=5) as r:
     data=json.load(r)
 assert len(data)==112
 with urlopen(base+'data/requirements-catalog.b64', timeout=5) as r:
-    md=gzip.decompress(base64.b64decode(r.read().strip())).decode('utf-8')
+    b64=''.join(r.read().decode().split())
+b64 += '=' * ((4-len(b64)%4)%4)
+md=gzip.decompress(base64.b64decode(b64)).decode('utf-8')
 assert '#### EPIC1_1 — Access Spreading Portal' in md
 assert '**User story**' in md
+assert '**Pre-condition**' in md
+assert '**Narrative / source business rules**' in md
 print('Local HTTP smoke test OK')
 PY
 
@@ -101,5 +106,6 @@ echo "[7/7] Verify detail loader contains fail-closed validation"
 grep -q "parsed.size !== 112" full-details-hotfix.js
 grep -q "Incomplete normalized detail" full-details-hotfix.js
 grep -q "requirementDetails.clear" full-details-hotfix.js
+grep -q "repeat((4 - (b64.length % 4)) % 4)" full-details-hotfix.js
 
 echo "All blocking smoke tests passed."

@@ -1,6 +1,6 @@
 /* KSP full RTM detail loader. Converts the normalized catalog into usable requirement content. */
 (async function () {
-  const escLocal = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
+  const escLocal = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#039;'}[c]));
 
   function getMeta(block, label) {
     const re = new RegExp('^- \\*\\*' + label.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&') + ':\\*\\*\\s*(.+)$', 'm');
@@ -48,6 +48,25 @@
     return map;
   }
 
+  async function decodeCatalog(base64Text) {
+    if (!('DecompressionStream' in window)) throw new Error('Browser does not support DecompressionStream.');
+    let b64 = base64Text.trim().replace(/\s+/g, '');
+    b64 += '='.repeat((4 - (b64.length % 4)) % 4);
+    const bytes = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+    const formats = ['gzip', 'deflate', 'deflate-raw'];
+    let lastError = null;
+    for (const format of formats) {
+      try {
+        const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream(format));
+        const text = await new Response(stream).text();
+        if (text.includes('# KSP Requirements Catalog') && text.includes('#### EPIC1_1')) return text;
+      } catch (error) {
+        lastError = error;
+      }
+    }
+    throw new Error('Unable to decompress requirement catalog' + (lastError ? ': ' + lastError.message : ''));
+  }
+
   function refreshDetailFilters() {
     const configs = [
       ['typeFilter', 'type'],
@@ -84,13 +103,8 @@
     const url = new URL('data/requirements-catalog.b64', document.baseURI);
     const response = await fetch(url, { cache: 'no-store' });
     if (!response.ok) throw new Error('requirements-catalog.b64 HTTP ' + response.status);
-    if (!('DecompressionStream' in window)) throw new Error('Browser does not support gzip decompression.');
 
-    let b64 = (await response.text()).trim().replace(/\s+/g, '');
-    b64 += '='.repeat((4 - (b64.length % 4)) % 4);
-    const bytes = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
-    const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));
-    const md = await new Response(stream).text();
+    const md = await decodeCatalog(await response.text());
     const parsed = parseFullCatalog(md);
 
     if (parsed.size !== 112) throw new Error('Expected 112 detailed requirements, parsed ' + parsed.size);

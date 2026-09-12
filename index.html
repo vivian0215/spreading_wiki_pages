@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>KSP Second Brain</title>
   <meta name="description" content="KSP / Automated Financial Statement Spreading project knowledge portal">
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css?v=20260912-3">
 </head>
 <body>
   <header class="topbar">
@@ -19,6 +19,7 @@
     <button class="tab" data-view="requirements">Requirements Explorer</button>
     <button class="tab" data-view="ai">AI Capabilities</button>
     <button class="tab" data-view="issues">Open Questions</button>
+    <button class="tab" data-view="library">Knowledge Library</button>
     <button class="tab" data-view="quality">BRD Quality Gates</button>
   </nav>
   <main>
@@ -31,7 +32,7 @@
       </div>
       <div class="grid two">
         <section class="panel"><h2>Current baseline</h2><ul><li>112 populated RTM rows across 9 epics.</li><li>Current normalized RTM inventory is Draft.</li><li>BRD says 70 user stories while the current RTM has 112 rows; this remains an unresolved baseline conflict.</li><li>BRD quality-gate workbook contains 10 package-level criteria.</li></ul></section>
-        <section class="panel"><h2>Knowledge model</h2><p>Source evidence → normalized knowledge → requirements / business rules → acceptance criteria → traceability → future JIRA / testing / tools.</p><p class="muted">This website is a consumption layer; the private repository remains the working source of truth.</p></section>
+        <section class="panel"><h2>Knowledge model</h2><p>Source evidence → normalized knowledge → requirements / business rules → acceptance criteria → traceability → future JIRA / testing / tools.</p><p class="muted">This website mirrors the normalized second-brain knowledge currently available in the repository.</p></section>
       </div>
     </section>
 
@@ -53,9 +54,10 @@
 
     <section id="ai" class="view"><div id="aiContent"></div></section>
     <section id="issues" class="view"><div id="issuesContent"></div></section>
+    <section id="library" class="view"><div class="library-layout"><aside id="libraryList" class="panel library-list"></aside><article id="libraryDetail" class="panel prose library-detail"><h2>Knowledge Library</h2><p>Select a document to read the normalized second-brain content.</p></article></div></section>
     <section id="quality" class="view"><div class="panel"><h2>BRD Acceptance / Quality Gates</h2><p>These are package-level acceptance/quality criteria for the BRD and requirement set, not story-level acceptance criteria.</p><div id="qualityList"></div></div></section>
   </main>
   <footer>Generated knowledge view • KSP Second Brain</footer>
-  <script src="app.js"></script>
+  <script src="app.js?v=20260912-3"></script>
 </body>
 </html>

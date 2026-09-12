@@ -1,17 +1,1 @@
-[
-  {
-    "id": "EPIC1_1",
-    "summary": "Access Spreading Portal",
-    "epic": "Epic 1: Submission & Intake",
-    "priority": "1-High",
-    "type": "F, W",
-    "sub_process": "Access",
-    "status": "Draft",
-    "origin": "Existing Function",
-    "process": "1. Extraction & Transformation / `1_1`",
-    "source_evidence": "SRC-003, RTM row 2",
-    "user_story": "As a credit analyst/CCOE, I want to log in to the spreading portal through single sign-on (SSO via TOP) so that I can start spreading a borrower's statements in one place.",
-    "pre_condition": "Analyst/CCOE has a valid account and assigned role.",
-    "business_rules": "1. Access is through SSO for KTB Employees. CCOE Central Team can use a direct log in."
-  }
-]
+__CONTENT_TOO_LARGE_PLACEHOLDER__

@@ -20,16 +20,12 @@
   function compareRequirements(a, b, sortMode, detailsMap) {
     const pRank = { '0-Critical': 0, '1-High': 1, '2-Medium': 2, '3-Low': 3 };
     const mode = sortMode || 'id';
-    if (mode === 'priority') {
-      return (pRank[a.priority] ?? 99) - (pRank[b.priority] ?? 99) || compareNaturalId(a, b);
-    }
+    if (mode === 'priority') return (pRank[a.priority] ?? 99) - (pRank[b.priority] ?? 99) || compareNaturalId(a, b);
     if (mode === 'epic') {
       const [ae] = requirementNumbers(a), [be] = requirementNumbers(b);
       return ae - be || compareNaturalId(a, b);
     }
-    if (mode === 'summary') {
-      return String(a.summary || '').localeCompare(String(b.summary || ''), undefined, { sensitivity: 'base' }) || compareNaturalId(a, b);
-    }
+    if (mode === 'summary') return String(a.summary || '').localeCompare(String(b.summary || ''), undefined, { sensitivity: 'base' }) || compareNaturalId(a, b);
     if (mode === 'subprocess') {
       const ad = detailsMap && detailsMap.get ? (detailsMap.get(a.id) || {}) : {};
       const bd = detailsMap && detailsMap.get ? (detailsMap.get(b.id) || {}) : {};
@@ -38,66 +34,54 @@
     return compareNaturalId(a, b);
   }
 
-  if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { requirementNumbers, compareNaturalId, compareRequirements };
-  }
-
+  if (typeof module !== 'undefined' && module.exports) module.exports = { requirementNumbers, compareNaturalId, compareRequirements };
   if (typeof window === 'undefined' || typeof document === 'undefined') return;
 
+  function getRequirements() {
+    try { return (typeof requirements !== 'undefined' && Array.isArray(requirements)) ? requirements : []; }
+    catch (_) { return []; }
+  }
+  function getDetailMap() {
+    try { return (typeof requirementDetails !== 'undefined' && requirementDetails && typeof requirementDetails.get === 'function') ? requirementDetails : new Map(); }
+    catch (_) { return new Map(); }
+  }
   function portalIsHealthy() {
-    try {
-      return Array.isArray(window.requirements) && window.requirements.length === 112 &&
-        window.requirementDetails && typeof window.requirementDetails.size === 'number' && window.requirementDetails.size === 112;
-    } catch (_) {
-      return false;
-    }
+    const reqs = getRequirements(), details = getDetailMap();
+    return reqs.length === 112 && details.size === 112;
   }
 
   function removeStaleLoadWarnings() {
     if (!portalIsHealthy()) return;
     document.querySelectorAll('.notice').forEach(function (n) {
       const text = (n.textContent || '').trim();
-      if (text.startsWith('Portal data load issue:') || text.includes('Portal data load issue: Failed to fetch')) n.remove();
+      if (text.startsWith('Portal data load issue:')) n.remove();
     });
   }
 
   function installSort() {
     const sort = document.getElementById('sortFilter');
     if (!sort) return;
+    if (!sort.querySelector('option[value="summary"]')) sort.insertAdjacentHTML('beforeend', '<option value="summary">Sort: Summary A–Z</option><option value="subprocess">Sort: Sub-process</option>');
 
-    if (!sort.querySelector('option[value="summary"]')) {
-      sort.insertAdjacentHTML('beforeend', '<option value="summary">Sort: Summary A–Z</option><option value="subprocess">Sort: Sub-process</option>');
-    }
-
-    window.filtered = function () {
-      const qEl = document.getElementById('reqSearch');
-      const epicEl = document.getElementById('epicFilter');
-      const priorityEl = document.getElementById('priorityFilter');
-      const typeEl = document.getElementById('typeFilter');
-      const subEl = document.getElementById('subProcessFilter');
-      const originEl = document.getElementById('originFilter');
-      const sortEl = document.getElementById('sortFilter');
-      const q = (qEl ? qEl.value : '').trim().toLowerCase();
-      const e = epicEl ? epicEl.value : '';
-      const p = priorityEl ? priorityEl.value : '';
-      const t = typeEl ? typeEl.value : '';
-      const s = subEl ? subEl.value : '';
-      const o = originEl ? originEl.value : '';
-      const detailMap = window.requirementDetails || new Map();
-      const reqs = Array.isArray(window.requirements) ? window.requirements : [];
-
-      const list = reqs.filter(function (r) {
-        const d = detailMap.get(r.id) || {};
-        const text = [r.id, r.summary, r.epic, r.priority, d.type, d.sub_process, d.user_story, d.pre_condition, d.narrative, d.process, d.origin, d.status].join(' ').toLowerCase();
-        return (!e || r.epic === e) && (!p || r.priority === p) && (!t || d.type === t) && (!s || d.sub_process === s) && (!o || d.origin === o) && (!q || text.includes(q));
+    filtered = function () {
+      const q = (document.getElementById('reqSearch')?.value || '').trim().toLowerCase();
+      const e = document.getElementById('epicFilter')?.value || '';
+      const p = document.getElementById('priorityFilter')?.value || '';
+      const t = document.getElementById('typeFilter')?.value || '';
+      const s = document.getElementById('subProcessFilter')?.value || '';
+      const o = document.getElementById('originFilter')?.value || '';
+      const sortMode = document.getElementById('sortFilter')?.value || 'id';
+      const details = getDetailMap();
+      const list = getRequirements().filter(function (r) {
+        const d = details.get(r.id) || {};
+        const text = [r.id,r.summary,r.epic,r.priority,d.type,d.sub_process,d.user_story,d.pre_condition,d.narrative,d.process,d.origin,d.status].join(' ').toLowerCase();
+        return (!e || r.epic===e) && (!p || r.priority===p) && (!t || d.type===t) && (!s || d.sub_process===s) && (!o || d.origin===o) && (!q || text.includes(q));
       });
-      return list.sort(function (a, b) { return compareRequirements(a, b, sortEl ? sortEl.value : 'id', detailMap); });
+      return list.sort(function (a,b) { return compareRequirements(a,b,sortMode,details); });
     };
 
     if (!sort.dataset.kspSortBound) {
-      sort.addEventListener('change', function () {
-        if (typeof window.renderRequirements === 'function') window.renderRequirements();
-      });
+      sort.addEventListener('change', function () { if (typeof renderRequirements === 'function') renderRequirements(); });
       sort.dataset.kspSortBound = '1';
     }
   }
@@ -105,7 +89,7 @@
   function refreshHealthyUI() {
     installSort();
     removeStaleLoadWarnings();
-    if (portalIsHealthy() && typeof window.renderRequirements === 'function') window.renderRequirements();
+    if (portalIsHealthy() && typeof renderRequirements === 'function') renderRequirements();
   }
 
   document.addEventListener('DOMContentLoaded', refreshHealthyUI, { once: true });
@@ -114,9 +98,6 @@
     setTimeout(refreshHealthyUI, 300);
     setTimeout(refreshHealthyUI, 1200);
   });
-
-  const observer = new MutationObserver(function () {
-    if (portalIsHealthy()) removeStaleLoadWarnings();
-  });
+  const observer = new MutationObserver(function () { if (portalIsHealthy()) removeStaleLoadWarnings(); });
   observer.observe(document.documentElement, { childList: true, subtree: true });
 })(typeof globalThis !== 'undefined' ? globalThis : this);

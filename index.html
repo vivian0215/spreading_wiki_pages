@@ -5,14 +5,14 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>KSP Project Second Brain</title>
   <meta name="description" content="KSP / Automated Financial Statement Spreading project knowledge portal">
-  <link rel="stylesheet" href="styles.css?v=20260913-1">
+  <link rel="stylesheet" href="styles.css?v=20260913-2">
 </head>
 <body>
   <header class="topbar">
     <div>
       <div class="eyebrow">KSP / Automated Spreading</div>
       <h1>Project Second Brain</h1>
-      <div class="header-meta"><span>112 requirements</span><span>9 epics</span><span>17 source artifacts</span></div>
+      <div class="header-meta"><span>112 alignment requirements</span><span>KSP technical baseline</span><span>17 source artifacts</span></div>
     </div>
     <div class="badge">Draft Knowledge Baseline</div>
   </header>
@@ -21,7 +21,8 @@
     <button class="tab active" data-view="dashboard">Dashboard</button>
     <button class="tab" data-view="overview">Project Overview</button>
     <button class="tab" data-view="process">As-Is / To-Be</button>
-    <button class="tab" data-view="requirements">Requirements Explorer</button>
+    <button class="tab" data-view="ksp-requirements">KSP Requirements</button>
+    <button class="tab" data-view="requirements">Alignment Requirements</button>
     <button class="tab" data-view="ai">AI Capabilities</button>
     <button class="tab" data-view="sources">Source Register</button>
     <button class="tab" data-view="issues">Open Questions</button>
@@ -32,24 +33,42 @@
 
   <main>
     <section id="dashboard" class="view active">
-      <div class="notice"><strong>Working baseline:</strong> detailed RTM content is shown as written in the current WIP source. Draft remains Draft; conflicts are surfaced rather than silently resolved.</div>
+      <div class="notice"><strong>Working baseline:</strong> KSP-side requirements and business-side alignment requirements are shown separately. Draft/derived items remain explicitly labelled and are not silently promoted to confirmed requirements.</div>
       <div id="stats" class="stats"></div>
       <div class="grid two">
-        <section class="panel"><h2>Requirement distribution by Epic</h2><div id="epicSummary"></div></section>
-        <section class="panel"><h2>Priority profile</h2><div id="prioritySummary"></div></section>
+        <section class="panel"><h2>Alignment requirement distribution by Epic</h2><div id="epicSummary"></div></section>
+        <section class="panel"><h2>Alignment priority profile</h2><div id="prioritySummary"></div></section>
       </div>
       <div class="grid two">
         <section class="panel"><h2>Capability origin</h2><div id="originSummary"></div></section>
         <section class="panel"><h2>Needs attention</h2><div id="attentionSummary"></div></section>
       </div>
-      <section class="panel prose"><h2>How to use this portal</h2><div class="quick-grid"><button class="quick-link" data-go="requirements">Explore all requirements</button><button class="quick-link" data-go="global-search">Search across all knowledge</button><button class="quick-link" data-go="sources">Review source artifacts</button><button class="quick-link" data-go="issues">Review open questions</button></div></section>
+      <section class="panel prose"><h2>How to use this portal</h2><div class="quick-grid"><button class="quick-link" data-go="ksp-requirements">Explore KSP requirements</button><button class="quick-link" data-go="requirements">Review alignment requirements</button><button class="quick-link" data-go="global-search">Search across all knowledge</button><button class="quick-link" data-go="sources">Review source artifacts</button></div></section>
     </section>
 
     <section id="overview" class="view"><div id="overviewContent"></div></section>
     <section id="process" class="view"><div id="processContent"></div></section>
 
+    <section id="ksp-requirements" class="view">
+      <div class="section-head"><div><h2>KSP Requirements</h2><p>This is the requirement space for the CreditLens / Technical / 99 Spreading side. It is intentionally separated from the business RTM that KSP must align with. Items marked <strong>Derived</strong> are grounded in KSP technical source artifacts but still require confirmation before being treated as an approved baseline.</p></div></div>
+      <div class="notice"><strong>Baseline rule:</strong> this tab never copies the 112 business RTM rows as KSP-owned requirements. Cross-side traceability will be linked explicitly instead.</div>
+      <div class="toolbar req-toolbar">
+        <input id="kspReqSearch" type="search" placeholder="Search KSP requirement, source, category, alignment...">
+        <select id="kspCategoryFilter"><option value="">All categories</option></select>
+        <select id="kspStatusFilter"><option value="">All statuses</option></select>
+        <select id="kspSourceFilter"><option value="">All technical sources</option></select>
+        <select id="kspSortFilter"><option value="id">Sort: ID</option><option value="category">Sort: Category</option><option value="status">Sort: Status</option><option value="summary">Sort: Summary A–Z</option></select>
+      </div>
+      <div id="kspReqCount" class="muted"></div>
+      <div class="requirements-layout">
+        <div id="kspRequirementsList" class="requirement-list"></div>
+        <article id="kspRequirementDetail" class="detail panel"><h2>Select a KSP requirement</h2><p>Choose an item from the list to inspect the requirement statement, rationale, source grounding and business-alignment links.</p></article>
+      </div>
+    </section>
+
     <section id="requirements" class="view">
-      <div class="section-head"><div><h2>Requirements Explorer</h2><p>Search and filter the complete normalized WIP RTM. Select a requirement to see the actual user story, pre-condition, source business rules, process mapping and source evidence.</p></div></div>
+      <div class="section-head"><div><h2>Alignment Requirements</h2><p>These are requirements from the business / Auto Spreading Tool Support RTM that the KSP side must align with. They are not treated as KSP-owned requirements. Search and filter the complete normalized WIP RTM below.</p></div></div>
+      <div class="notice"><strong>Ownership:</strong> the 112 rows in this explorer come from <code>Automated Spreading_RTM_WIP.xlsx</code> on the business-alignment side.</div>
       <div class="toolbar req-toolbar">
         <input id="reqSearch" type="search" placeholder="Search ID, summary, user story, business rule...">
         <select id="epicFilter"><option value="">All epics</option></select>
@@ -62,7 +81,7 @@
       <div id="resultCount" class="muted"></div>
       <div class="requirements-layout">
         <div id="requirementsList" class="requirement-list"></div>
-        <article id="requirementDetail" class="detail panel"><h2>Select a requirement</h2><p>Choose an item from the list to inspect its full normalized content.</p></article>
+        <article id="requirementDetail" class="detail panel"><h2>Select an alignment requirement</h2><p>Choose an item from the list to inspect its full normalized content.</p></article>
       </div>
     </section>
 
@@ -78,27 +97,28 @@
     <section id="issues" class="view"><div id="issuesContent"></div></section>
 
     <section id="library" class="view">
-      <div class="section-head"><div><h2>Knowledge Library</h2><p>Read the normalized wiki documents in one place, including the full 112-requirement catalog.</p></div></div>
+      <div class="section-head"><div><h2>Knowledge Library</h2><p>Read the normalized wiki documents in one place, including the full alignment-requirement catalog.</p></div></div>
       <div class="library-layout"><aside id="libraryList" class="panel library-list"></aside><article id="libraryDetail" class="panel prose library-detail"><h2>Knowledge Library</h2><p>Select a document to read its normalized content.</p></article></div>
     </section>
 
     <section id="global-search" class="view">
-      <div class="section-head"><div><h2>Global Search</h2><p>Search across requirement summaries, full user stories, business rules, process mappings and normalized wiki documents.</p></div></div>
+      <div class="section-head"><div><h2>Global Search</h2><p>Search across KSP requirements, alignment requirement summaries, full user stories, business rules, process mappings and normalized wiki documents.</p></div></div>
       <div class="global-search-box"><input id="globalSearchInput" type="search" placeholder="Try: confidence level, SFA, audit trail, approval, Thai..."></div>
       <div id="globalSearchCount" class="muted"></div>
       <div id="globalSearchResults"></div>
     </section>
 
     <section id="quality" class="view">
-      <div class="section-head"><div><h2>BRD Acceptance / Quality Gates</h2><p>Package-level acceptance criteria for the BRD and requirement set. These are not story-level acceptance criteria.</p></div></div>
+      <div class="section-head"><div><h2>BRD Acceptance / Quality Gates</h2><p>Package-level acceptance criteria for the business BRD and alignment requirement set. These are not KSP story-level acceptance criteria.</p></div></div>
       <div id="qualityList"></div>
     </section>
   </main>
 
   <footer>Generated knowledge view • KSP Project Second Brain • Read-only portal</footer>
-  <script src="app.js?v=20260913-1"></script>
-  <script src="stability-hotfix.js?v=20260913-1"></script>
-  <script src="full-details-hotfix.js?v=20260913-1"></script>
-  <script src="portal-fixes.js?v=20260913-1"></script>
+  <script src="app.js?v=20260913-2"></script>
+  <script src="stability-hotfix.js?v=20260913-2"></script>
+  <script src="full-details-hotfix.js?v=20260913-2"></script>
+  <script src="portal-fixes.js?v=20260913-2"></script>
+  <script src="ksp-requirements.js?v=20260913-2"></script>
 </body>
 </html>
